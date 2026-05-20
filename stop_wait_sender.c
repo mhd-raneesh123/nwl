@@ -18,8 +18,6 @@ int main() {
     addr.sin_family = AF_INET;
     addr.sin_port = htons(PORT);
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
-    // SETTING THE TIMEOUT: Wait max 2 seconds for an ACK
     struct timeval tv;
     tv.tv_sec = 2;
     tv.tv_usec = 0;
@@ -31,22 +29,19 @@ int main() {
     printf("Starting Stop and Wait ARQ Sender...\n\n");
 
     while (frame_id < total_frames) {
-        // 1. Send the Frame
         sprintf(buffer, "Frame %d", frame_id);
         sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr*)&addr, addr_size);
         printf("[+] Sent: %s\n", buffer);
-
-        // 2. Wait for the ACK
         memset(buffer, 0, sizeof(buffer));
         int n = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr, &addr_size);
 
         if (n < 0) {
-            // recvfrom failed/timed out
+            
             printf("[-] Timeout! Did not receive ACK for %d. Retransmitting...\n", frame_id);
         } else {
-            // ACK received successfully
+            
             printf("[+] Received: %s\n\n", buffer);
-            frame_id++; // Move to the next frame only if ACK is received
+            frame_id++; 
         }
     }
 
