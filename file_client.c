@@ -1,26 +1,58 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <string.h>
 #include <arpa/inet.h>
 
 int main() {
-    int sock;
-    struct sockaddr_in addr = {AF_INET, htons(8080), inet_addr("127.0.0.1")};
-    char fname[256], buf[2048];
+    int sock_fd;
+    struct sockaddr_in server_addr;
+    char fname[1024], buffer[4096];
+    int bytes;
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) exit(1);
-    if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) exit(1);
+    // 1. Create socket
+    sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock_fd < 0) {
+        perror("Socket creation failed");
+        return -1;
+    }
 
-    printf("Enter filename to request: ");
-    scanf("%s", fname);
-    send(sock, fname, strlen(fname), 0);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(8053);
+    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    if (recv(sock, buf, 2048, 0) > 0)
-        printf("Server Response:\n%s\n", buf);
-    else
-        printf("Receive failed\n");
+    // 2. Connect to server
+    if (connect(sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        perror("Connection failed");
+        return -1;
+    }
+    printf("Connected to File Server.\n\n");
 
-    close(sock);
+    // 3. Loop to request multiple files
+    while (1) {
+        printf("Enter filename (or type 'exit' to quit): ");
+        scanf("%s", fname);
+
+        if (strcmp(fname, "exit") == 0) {
+            break;
+        }
+
+        // Send filename to server
+        send(sock_fd, fname, strlen(fname), 0);
+
+        // Receive response (PID + Content or Error)
+        memset(buffer, 0, sizeof(buffer));
+        bytes = recv(sock_fd, buffer, sizeof(buffer) - 1, 0);
+        
+        if (bytes <= 0) {
+            printf("Server disconnected.\n");
+            break;
+        }
+        
+        buffer[bytes] = '\0';
+        printf("\n--- Server Response ---\n%s\n-----------------------\n\n", buffer);
+    }
+
+    close(sock_fd);
     return 0;
 }
