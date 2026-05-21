@@ -47,6 +47,19 @@ int main() {
         reversed = (reversed * 10) + remainder;
         num /= 10;
     }
+    /*
+        int left = 0;
+    int right = strlen(buffer) - 1;
+
+    while (left < right) {
+        if (buffer[left] != buffer[right]) {
+            result = 0; // Mismatch found, not a palindrome
+            break;
+        }
+        left++;
+        right--;
+    }
+    */
 
     // Determine the result (1 if true, 0 if false)
     if (original == reversed) {
